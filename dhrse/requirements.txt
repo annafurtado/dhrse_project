@@ -1,0 +1,6 @@
+pandas
+gensim
+spacy
+plotly
+re
+math
