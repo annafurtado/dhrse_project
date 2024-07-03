@@ -1,10 +1,10 @@
-#Linguistic analysis of Literary texts written by Shakespeare
+# Linguistic analysis of Literary texts written by Shakespeare
 ### Dataset description 
 
-This dataset contains the complete text of "Hamlet," a tragedy written by William Shakespeare. The play, which is among Shakespeare's most famous and frequently performed works, explores themes of treachery, revenge, incest, and moral corruption. It is structured in five acts, with a series of scenes within each act.
+This project contains a dataset with the complete text of "Hamlet" and a code that analyzes the 10 most frequent words used in the text. "Hamlet" is a tragedy written by William Shakespeare. The play, which is among Shakespeare's most famous and frequently performed works, explores themes of treachery, revenge, incest, and moral corruption. It is structured in five acts, with a series of scenes within each act.
 The dataset is organized as follows:
 
-###File structure
+### File structure
 
 The dataset is organized as follows:
 
@@ -21,8 +21,10 @@ Lemmatization is a process in natural language processing (NLP) that reduces wor
 **N-gram Extraction**
 
 The project employs n-gram techniques to extract key terms from the targeted texts. Specifically, bigram and trigram approaches have been employed to analyze the text and uncover significant word patterns.
-### Visulising the data
 
+### Visuliasing the data
+
+![example_graph.png](example_graph.png)
 
 ### Required libraries 
 
