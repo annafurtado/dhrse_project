@@ -1,4 +1,4 @@
-#Linguistic analysis of Literary texts written by Shakespeare
+# Linguistic analysis of Literary texts written by Shakespeare
 ### Dataset description 
 
 This dataset contains the complete text of "Hamlet," a tragedy written by William Shakespeare. The play, which is among Shakespeare's most famous and frequently performed works, explores themes of treachery, revenge, incest, and moral corruption. It is structured in five acts, with a series of scenes within each act.
