@@ -1,112 +1,123 @@
 import os
-
+import spacy
 import nltk
-from gensim.models.phrases import Phrases, Phraser
+import operator
+import re
+import math
+
+from collections import defaultdict
 from nltk.corpus import stopwords
+import pandas as pd
+from gensim.models.phrases import Phrases, Phraser
+from gensim.utils import simple_preprocess
+import plotly as py
+import plotly.express as px
+
 
 
 nltk.download('stopwords')
 
-
 # Descriptive comment
-# TODO Naming
 source_dir = os.path.abspath(os.getcwd())
 data_path = os.path.join(source_dir, 'data') # TODO Inputs
 output_dir = os.path.join(source_dir, 'results') # TODO Inputs
 
 # Set variables for processing
-# TODO Naming
 lang_model = "en_core_web_sm"
 error_handling = "ignore"
 
-# Create the list of stop words, or words that are not important for our analysis and should be excluded
-stop_words = []
-stop_words.extend(stopwords.words("english")) # Add nltk stop words
-# Add custom stop words
-stop_words.extend(['would', 'said', 'says', 'also', 'good', 'lord', 'come', 'let','say', 'speak', 'know', 'hamlet'])
-stop_words_file = os.path.join(data_path, "earlyModernStopword.txt")
 
-
-def get_stop_wordlist(stop_word_file):
+def get_stop_wordlist(stop_word_file, previous_stop_wordlist, words_to_add):
     """
     Reads a stop word file and add its words into the stop_wordlist
     :param stop_word_file: a txt file containing one word per line
+    :previous_stop_wordlist: the list containing extended and nltk stop words
+    :words_to_add: a list of words you would like to add to the stop wordlist
     :return: a custom stop wordlist
     """
     stop_word_custom = []
     with open(stop_word_file, "r", encoding="utf-8") as flh:
         for word in flh.readlines():
             stop_word_custom.append(word.strip())
-    return stop_word_custom
+    previous_stop_wordlist.extend(words_to_add)
+    return previous_stop_wordlist.extend(stop_word_custom)
 
 
-stopWords.extend(stopWordsCustom)
-
+# Create the list of stop words, or words that are not important for our analysis and should be excluded
+stop_words = []
+stop_words.extend(stopwords.words("english")) # Add nltk stop words
+stop_words_file = os.path.join(data_path, "earlyModernStopword.txt")
+more_stopwords = ['would', 'said', 'says', 'also', 'good', 'lord', 'come', 'let','say', 'speak', 'know', 'hamlet']
+# call the function for stop words
+final_stop_wordlist = get_stop_wordlist(stop_words_file, stop_words, more_stopwords)
+print(final_stop_wordlist)
+"""
 # Variables for making Trigrams
-minCount = 5
-thresHold = 100
+min_count = 5
+threshold = 100
 
-def makeTrigrams(tokens):
-    # Build the bigram and trigram models
-    # get bigram phrases
-    bigram = Phrases(tokens, min_count=minCount, threshold=thresHold) # higher threshold indicates fewer phrases
+def make_trigrams(document):
+    
+    Builds bigram and trigram models and extract them given a document
+    :param document: document containing the text
+    :return: a list of bi- and trigrams
+    
+    bigram = Phrases(document, min_count=min_count, threshold=threshold) # higher threshold indicates fewer phrases
     bigram_model = Phraser(bigram) # Removes model state from Phrases to reduce memory use
-    # get trigram phrases
-    bigram = Phrases(tokens, min_count=minCount, threshold=thresHold) # TODO DRY
-    trigram = Phrases(bigram[tokens], threshold=thresHold)
+    trigram = Phrases(bigram[document], threshold=threshold)
     trigram_model = Phraser(trigram)
-    result = []
-    for doc in tokens:
-        bigram_result = bigram_model[doc]
+    result_ngrams = []
+    for token in document:
+        bigram_result = bigram_model[token]
         trigram_result = trigram_model[bigram_result]
-        result.append(trigram_result)
-    return result
+        result_ngrams.append(trigram_result)
+    return result_ngrams
 
 
-# Descriptive comment
-def makeLemma(tokens, spacy=None):
-    dataWordsNgrams = makeTrigrams(tokens)
-
-    def lemmatization(tokens):
-        """https://spacy.io/api/annotation"""
-        textsOut = []
-        for sent in tokens:
-            doc = nlp(" ".join(sent))
-            textsOut.append([token.lemma_ for token in doc if token.lemma_ != '-PRON-'])
-        return textsOut
-
+def lemmatization(document):
+    n_grams = make_trigrams(document)
+    
+    Takes a document and do lemmatization
+    :document: the document to lemmatized
+    :return: a list of lemmatized_text
+    
+    lemmatized_text = []
     # Initialize spacy language model, removing the parser and ner components
-    nlp = spacy.load(lemLang_model, disable=['parser', 'ner'])
+    nlp = spacy.load(lang_model, disable=['parser', 'ner'])
+    for sent in document:
+        doc = nlp(" ".join(sent))
+        lemmatized_text.append([token.lemma_ for token in doc if token.lemma_ != '-PRON-'])
     # Do lemmatization
-    dataLemmatized = lemmatization(dataWordsNgrams)
+    lemmatized_data = lemmatization(n_grams)
+    return lemmatized_data
 
-    return dataLemmatized
 
-# TODO Naming:
+document_name = 'Hamlet.txt'
+top_ten_output_file = "topTenPlainText"
+
 n = 10
-documentName = 'Hamlet.txt' # TODO Inputs
-outputFile = "topTenPlainText" # TODO Inputs
-fmt = '.html'
-figure_Xlabel = "Word"
-figure_Ylabels = "Count"
-figureZlabel = "Percent"
-figureWidth = 750
-figure_height = 550
-figure_Axisangle = -45
-figureTitle = 'Top 10 Words, Hamlet'
+file_format = '.html'
+fig_x_label = "Word"
+fig_y_label = "Count"
+fig_z_label = "Percent"
+fig_width = 750
+fig_height = 550
+axis_angle = -45
+fig_title = 'Top 10 Words, Hamlet'
 colors = px.colors.qualitative.Dark24
-labCol = "crimson"
+pallette = "crimson"
 
-textFilepath = os.path.join(data_path, documentName) # TODO Inputs
-# Descriptive comment
+text_path = os.path.join(data_path, document_name) # TODO Inputs
+
 docs=[]
-with open(textFilepath, "r", encoding = encoding, errors = how_to_handleErrors) as f:
-    for line in f:
+with open(text_path, "r", encoding="utf-8", errors=error_handling) as flh:
+    for line in flh:
         singleLine = line.strip()
         if len(singleLine) == 0:
             continue
         docs.append(singleLine.split())
 # remove punctuation from sentences and parse into words
+
 words = []
 for sentence in docs:
     words.append(simple_preprocess(str(sentence), deacc=True)) # deacc=True removes punctuations
@@ -130,7 +141,7 @@ for t in tokens:
     freq[t] += 1
 # sort frequency in descending order
 freq = sorted(freq.items(), key = operator.itemgetter(1), reverse = True)
-imgFilepath = os.path.join(resultsPath, outputFile + fmt)
+imgFilepath = os.path.join(resultsPath, top_ten_output_file + file_format)
 
 # plot top ten words in a histogram
 topn = n
@@ -151,12 +162,13 @@ dfPct = pd.concat([dfPct,df[9:10]])
 # Descriptive comment
 high = max(df["Count"])
 low = 0
-fig = px.bar(dfPct, x = "Words", y = "Count",hover_data=[dfPct["Pct"]],text = "Count", color = "Words",
-             title = figureTitle, color_discrete_sequence=colors,
-             labels = {"Words":figure_Xlabel,"Count":figure_Ylabels,"Pct":figureZlabel})
+fig = px.bar(dfPct, x = "Words", y = "Count", hover_data=[dfPct["Pct"]], text = "Count", color = "Words",
+             title = fig_title, color_discrete_sequence=colors,
+             labels = {"Words":fig_x_label, "Count":fig_y_label, "Pct":fig_z_label})
 fig.update_layout(title={'y':0.90, 'x':0.5, 'xanchor': 'center', 'yanchor':'top'},
-                  font={"color": labCol}, width = figureWidth, height = figure_height, showlegend=False)
-fig.update_xaxes(tickangle = figure_Axisangle)
+                  font={"color": pallette}, width = fig_width, height = fig_height, showlegend=False)
+fig.update_xaxes(tickangle = axis_angle)
 fig.update_yaxes(range = [low,math.ceil(high + 0.1 * (high - low))])
 py.offline.plot(fig, filename=imgFilepath, auto_open = False)
 fig.show()
+"""
